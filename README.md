@@ -1,2 +1,7 @@
-# InterPlanetApplicationProtocol
-IPAP - Inter-Planet Application Protocol. This document is published as prior art to prevent  patent monopolization of the described concepts.
+# IPAP - Inter-Planet Application Protocol
+
+This document is published as prior art to prevent 
+patent monopolization of the described concepts.
+
+Published: 2026-04-30
+Author: A. Nakagawa
