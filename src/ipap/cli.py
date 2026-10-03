@@ -95,7 +95,10 @@ def _cmd_verify(args: argparse.Namespace) -> int:
     if args.vectors:
         vectors = [TestVector.from_dict(d) for d in json.loads(Path(args.vectors).read_text())]
     assets = {p.name: p.read_bytes() for p in map(Path, args.asset or [])}
-    run_input = json.loads(args.input) if args.input else None
+    if args.input is not None:
+        run_input = json.loads(args.input)
+    else:  # dry-run with the first vector's input so the default invocation is meaningful
+        run_input = vectors[0].input if vectors else None
     verifier = Verifier(require_test_vectors=bool(vectors))
     report = asyncio.run(verifier.verify(source, vectors, assets, args.timeout, run_input))
     print(json.dumps(report.to_list(), ensure_ascii=False, indent=2))
@@ -165,7 +168,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("program")
     p.add_argument("--vectors", help="JSON list of {id, input, expected[, tolerance]}")
     p.add_argument("--asset", action="append", help="asset file passed to main (repeatable)")
-    p.add_argument("--input", help="JSON input for the sandbox dry run")
+    p.add_argument("--input", help="JSON input for the sandbox dry run "
+                                   "(default: the first test vector's input)")
     p.add_argument("--timeout", type=float, default=10.0, help="seconds per run")
     p.set_defaults(func=_cmd_verify)
 

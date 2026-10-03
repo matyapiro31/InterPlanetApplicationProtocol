@@ -89,6 +89,11 @@ class Endpoint:
         self._next_seq = first_seq
         self.replay = ReplayGuard()
 
+    @property
+    def upcoming_seq(self) -> int:
+        """The sequence number the next built packet will carry."""
+        return self._next_seq
+
     def next_seq(self) -> int:
         seq = self._next_seq
         self._next_seq = (self._next_seq + 1) & 0xFFFFFFFF

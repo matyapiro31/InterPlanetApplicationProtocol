@@ -18,6 +18,8 @@ def test_examples_match_demo_data():
     vectors = [TestVector.from_dict(d)
                for d in json.loads((EXAMPLES / "test_vectors.json").read_text())]
     assert vectors == demo_data.ALL_VECTORS
+    obstacle_vectors = json.loads((EXAMPLES / "obstacle_vectors.json").read_text())
+    assert [TestVector.from_dict(d) for d in obstacle_vectors] == demo_data.OBSTACLE_VECTORS
     obstacle = decode_payload(MessageType.EXEC, (EXAMPLES / "exec_obstacle.json").read_bytes())
     assert obstacle == obstacle_exec()
     route = decode_payload(MessageType.EXEC, (EXAMPLES / "exec_route.json").read_bytes())
@@ -63,7 +65,9 @@ def test_verify_command(capsys):
     # Route vectors fail against the obstacle program, so the full set must fail ...
     assert main(args) == 1
     assert "FAILED" in capsys.readouterr().out
-    # ... while the fallback program passes the static and sandbox layers on its own.
+    # ... while the obstacle vectors alone pass, as does the fallback with no vectors.
+    assert main(["verify", str(EXAMPLES / "obstacle_avoidance.py"),
+                 "--vectors", str(EXAMPLES / "obstacle_vectors.json")]) == 0
     assert main(["verify", str(EXAMPLES / "fallback" / "safe_stop.py"), "--input", "{}"]) == 0
 
 

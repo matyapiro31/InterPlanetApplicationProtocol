@@ -76,6 +76,80 @@ Key sections:
 
 ---
 
+## Reference Implementation
+
+A Python reference implementation and Earth↔Mars simulator live in [`src/ipap`](./src/ipap).
+Where the RFC is silent or ambiguous, the choices made are recorded in
+[`docs/spec-notes.md`](./docs/spec-notes.md).
+
+| Module | RFC section |
+|---|---|
+| `packet.py`, `payloads.py` | 5. Message format (16-byte header, 6 message types) |
+| `crypto.py`, `session.py` | 10. Ed25519 signatures, end-to-end encryption, replay protection |
+| `node.py` | 6. Remote-node state machine, 4.2 core workflow |
+| `power.py` | 7. Power thresholds and LLM activation |
+| `egc.py` | 7.2 WAKE/READY handshake (skipped for CRITICAL) |
+| `assets.py` | 8. IPFS CID asset references |
+| `verify/` | 9. Static analysis → test vectors → sandbox, rollback to fallback |
+| `llm/` | Pluggable LLM engine: deterministic mock, Claude API, Ollama |
+| `link.py`, `sim.py` | Delayed, bandwidth-limited DTN-style link with blackouts |
+
+### Quick start
+
+```sh
+python -m venv .venv && . .venv/bin/activate
+pip install -e '.[dev]'
+pytest                      # unit + end-to-end tests
+ipap sim                    # run every simulation scenario
+ipap sim happy abort        # or pick scenarios
+```
+
+`ipap sim` replays each exchange in compressed mission time (default: 1 mission second =
+1 ms) with a 10-minute one-way light time and a 10 kbps link:
+
+```
+== happy: Route optimisation with an IPFS asset
+   T+00:00:01 [earth] send WAKE seq=1 priority=NORMAL (142 B, eta T+602s)
+   T+00:10:03 [mars ] recv WAKE seq=1 priority=NORMAL
+   T+00:10:04 [mars ] send READY seq=1 (216 B) llm=AVAILABLE power=87.0% reply_to=1
+   T+00:20:07 [earth] send EXEC seq=2 priority=HIGH (684 B, eta T+1808s)
+   T+00:30:11 [mars ] state READY_CHECK -> LLM_ACTIVE
+   T+00:30:56 [mars ] state LLM_ACTIVE -> VERIFYING
+   T+00:32:00 [mars ] state VERIFYING -> EXECUTING
+   T+00:32:32 [mars ] send RESULT seq=2 (455 B) status=OK reply_to=2
+   T+00:42:35 [earth] recv RESULT seq=2 status=OK reply_to=2
+-> PASS WAKE→READY→EXEC→RESULT status=OK, route cost=8; EXEC packet 684 B (0.5 s at 10 kbps)
+   vs. 100 MB binary (23.3 h)
+```
+
+Scenarios: `happy`, `low-power`, `verify-fail`, `missing-asset`, `abort`, `tamper`,
+`critical`, `emergency`, `conjunction`.
+
+### Working with packets
+
+```sh
+ipap keygen earth && ipap keygen mars
+ipap encode --type exec --payload examples/exec_obstacle.json \
+    --key earth.key --peer mars.pub --encrypt -o exec.bin
+ipap decode exec.bin --peer earth.pub --key mars.key     # verify + decrypt
+ipap verify examples/obstacle_avoidance.py --vectors examples/obstacle_vectors.json
+```
+
+### Using a real LLM
+
+The mock engine is deterministic, so tests and simulations are reproducible. To have a real
+model generate the programs:
+
+```sh
+pip install -e '.[anthropic]' && ipap sim happy critical --llm anthropic   # Claude API
+ipap sim happy critical --llm ollama --model qwen2.5-coder                  # local Ollama
+```
+
+Generated programs must define `main(input, assets)`; they only run after passing the
+three verification layers.
+
+---
+
 ## Prior Art Statement
 
 This repository is published explicitly as **prior art** under the principles of defensive publication.

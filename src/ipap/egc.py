@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from .constants import LLMAvailability, Priority
@@ -103,7 +103,7 @@ class GroundControl:
     def submit(self, payload: Payload, priority: Priority | None = None
                ) -> tuple[int, asyncio.Future[Payload]]:
         """Send a message and return a future for the reply that names its sequence number."""
-        seq = self.endpoint._next_seq
+        seq = self.endpoint.upcoming_seq
         fut: asyncio.Future[Payload] = asyncio.get_running_loop().create_future()
         self._pending[seq] = fut
         sent = self.send(payload, priority)
@@ -137,7 +137,7 @@ class GroundControl:
             if ready.llm is not LLMAvailability.AVAILABLE:
                 raise HandshakeDeferred(ready)
             if payload.llm_model is None:
-                payload.llm_model = ready.llm_model
+                payload = replace(payload, llm_model=ready.llm_model)
         seq, fut = self.submit(payload, priority)
         result = await self.wait(fut, timeout_s)
         assert isinstance(result, ResultPayload)
