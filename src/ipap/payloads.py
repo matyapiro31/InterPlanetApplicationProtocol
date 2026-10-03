@@ -265,6 +265,20 @@ PAYLOAD_TYPES: dict[MessageType, type[Payload]] = {
 }
 
 
+def describe(payload: Payload) -> str:
+    """A one-line human-readable summary used in logs."""
+    if isinstance(payload, ReadyPayload):
+        return f"llm={payload.llm} power={payload.power}% reply_to={payload.in_reply_to}"
+    if isinstance(payload, ResultPayload):
+        text = f"status={payload.status} reply_to={payload.in_reply_to}"
+        return text + (f" error={payload.error!r}" if payload.error else "")
+    if isinstance(payload, StatusPayload):
+        return f"state={payload.state} power={payload.power}%"
+    if isinstance(payload, AbortPayload):
+        return f"target_seq={payload.target_seq}"
+    return ""
+
+
 def encode_payload(payload: Payload) -> bytes:
     return json.dumps(payload.to_dict(), ensure_ascii=False, separators=(",", ":")).encode()
 
@@ -292,5 +306,6 @@ __all__ = [
     "TestVector",
     "WakePayload",
     "decode_payload",
+    "describe",
     "encode_payload",
 ]

@@ -34,11 +34,21 @@ class VerificationReport:
     def failure(self) -> str | None:
         for layer in self.layers:
             if not layer.passed:
-                return f"{layer.layer}: {layer.detail}"
+                return f"{layer.layer}: {_brief(layer.detail)}"
         return None
 
     def to_list(self) -> list[dict[str, Any]]:
         return [asdict(layer) for layer in self.layers]
+
+
+def _brief(detail: Any) -> str:
+    if isinstance(detail, list) and detail:
+        first = detail[0]
+        if isinstance(first, dict):
+            first = f"{first.get('id')}: {first.get('detail')}"
+        more = f" (+{len(detail) - 1} more)" if len(detail) > 1 else ""
+        return f"{first}{more}"
+    return str(detail)
 
 
 class Verifier:
