@@ -10,6 +10,10 @@ from enum import IntEnum, IntFlag, StrEnum
 PROTOCOL_VERSION = 1
 IPAP_VERSION_STRING = "1.0"
 
+# Mission Timestamp = seconds since this epoch (2026-01-01T00:00:00Z) unless a
+# simulation clock is supplied.
+MISSION_EPOCH_UNIX = 1_767_225_600
+
 HEADER_SIZE = 16
 SIGNATURE_SIZE = 64
 MAX_PACKET_SIZE = 0xFFFF

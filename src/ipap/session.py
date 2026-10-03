@@ -10,7 +10,7 @@ import zlib
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from .constants import Flags, MessageType, Priority
+from .constants import MISSION_EPOCH_UNIX, Flags, MessageType, Priority
 from .crypto import (
     DecryptionError,
     Identity,
@@ -66,6 +66,10 @@ class ReplayGuard:
         self.seen = {s for s in self.seen if s > floor}
 
 
+def mission_time() -> float:
+    return time.time() - MISSION_EPOCH_UNIX
+
+
 class Endpoint:
     def __init__(
         self,
@@ -79,7 +83,7 @@ class Endpoint:
     ) -> None:
         self.identity = identity
         self.peer_public_key = peer_public_key
-        self.clock = clock or time.monotonic
+        self.clock = clock or mission_time
         self.encrypt = encrypt
         self.compress_threshold = compress_threshold
         self._next_seq = first_seq
@@ -111,7 +115,7 @@ class Endpoint:
             msg_type=payload.msg_type,
             seq=self.next_seq() if seq is None else seq,
             payload=body,
-            timestamp=int(self.clock()) & 0xFFFFFFFF,
+            timestamp=max(0, int(self.clock())) & 0xFFFFFFFF,
             priority=priority,
             llm_version=llm_version,
             flags=flags,
