@@ -1,0 +1,29 @@
+{
+  "ipap_version": "1.0",
+  "prompt": "障害物回避アルゴリズムを生成せよ。入力 input['ranges'] は8方向(0=正面, 45度刻み時計回り)のLiDAR距離。最も開けた方向を選び {'action': 'go', 'turn_deg': 角度} を返す。右旋回は正、左旋回は負(±180は+180)。同距離なら旋回量が小さい方、それも同じなら番号の小さい方。最大距離が input.get('min_clearance', 1.0) 未満なら {'action': 'stop', 'turn_deg': 0}。",
+  "constraints": {
+    "language": "python",
+    "max_tokens": 2048,
+    "timeout_ms": 10000,
+    "test_vectors": [
+      "tc_001",
+      "tc_002",
+      "tc_003",
+      "tc_004",
+      "tc_005"
+    ]
+  },
+  "input": {
+    "ranges": [
+      2.0,
+      1.5,
+      0.8,
+      0.4,
+      0.3,
+      0.6,
+      3.2,
+      2.5
+    ]
+  },
+  "fallback": "program_id:safe_stop"
+}
